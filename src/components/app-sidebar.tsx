@@ -3,14 +3,13 @@ import
 {
     Sidebar
 } from "@/components/ui/sidebar"
-import { sidebarStore } from "@/store/sidebar"
-import { useStore } from "@tanstack/react-store"
+import { useSidebarState } from "@/store/sidebar"
 
 
 
 export function AppSidebar()
 {
-    const sidebarContent = useStore(sidebarStore, (store) => store.content)
+    const sidebarContent = useSidebarState((state) => state.content)
     return (
         <Sidebar>
             {sidebarContent}

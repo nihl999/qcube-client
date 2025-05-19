@@ -1,4 +1,4 @@
-import type { TTheme } from '@/store/editor'
+import type { TEditorTheme } from '@/store/editor'
 import type { editor } from 'monaco-editor'
 export type MonacoThemeData = editor.IStandaloneThemeData
 

@@ -1,15 +1,13 @@
 import { CustomSidebarTrigger } from '@/components/sidebar-trigger'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
-import { editorStore } from '@/store/editor'
-import { sidebarStore } from '@/store/sidebar'
+import { useEditorState } from '@/store/editor'
 import MonacoEditor from '@monaco-editor/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
 import { useDebounce } from "@uidotdev/usehooks"
 import { editor as IEditorNamespace } from 'monaco-editor'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import EditorThemeSelector from './-components/editor-theme-selector'
 
 export const Route = createFileRoute('/editor/')({
   component: RouteComponent,
@@ -19,9 +17,10 @@ function RouteComponent()
 {
   let editorInstance: IEditorNamespace.IStandaloneCodeEditor | null = null
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const editorState = useStore(editorStore)
+  const editorState = useEditorState()
   const debouncedContent = useDebounce(editorState.content, 100)
-
+  const onEditorThemeSelect = useCallback((value: string) =>
+    editorState.setCurrentTheme(value), [editorState.currentTheme])
   const { mutate: mutateConformYaml } = useMutation({
     mutationFn: async (yaml: string) =>
     {
@@ -40,7 +39,6 @@ function RouteComponent()
 
   useEffect(() =>
   {
-    editorState.persistContent()
     if (debouncedContent)
     {
       mutateConformYaml(debouncedContent)
@@ -70,22 +68,7 @@ function RouteComponent()
         <>
           <div className='flex items-center justify-between' style={{ background: editorState.currentTheme.bgColor }}>
             <CustomSidebarTrigger />
-            <Select
-              onValueChange={(value) =>
-                editorState.setCurrentTheme(value)
-              }
-              defaultValue={editorState.currentTheme.code}
-
-            >
-              <SelectTrigger className="w-3xs m-2">
-                <SelectValue placeholder="Editor theme" />
-              </SelectTrigger>
-              <SelectContent>
-                {editorState.themes.map((theme) =>
-                  <SelectItem value={theme.code} key={theme.code}>{theme.name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <EditorThemeSelector onChange={onEditorThemeSelect} defaultValue={editorState.currentTheme.code} themes={editorState.themes} />
           </div>
           <div
             ref={containerRef}
@@ -105,7 +88,7 @@ function RouteComponent()
               onChange={(value) =>
               {
                 if (value === undefined) return;
-                editorStore.setState((state) => ({ ...state, content: value }))
+                useEditorState.setState((state) => ({ ...state, content: value }))
               }}
               onMount={async (editor, _) =>
               {

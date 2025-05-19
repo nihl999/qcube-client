@@ -1,4 +1,4 @@
-import { Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 import TanstackQueryLayout from '@/integrations/tanstack-query/layout'
@@ -6,13 +6,11 @@ import TanstackQueryLayout from '@/integrations/tanstack-query/layout'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { ThemeProvider } from '@/integrations/theme/theme-provider'
-import type { QueryClient } from '@tanstack/react-query'
 import { useMonaco } from '@monaco-editor/react'
-import { useStore } from '@tanstack/react-store'
+import type { QueryClient } from '@tanstack/react-query'
 import { genMonacoThemeName, loadMonacoThemes } from '../helpers/loadMonacoThemes.ts'
-import { defaultThemes, editorStore, type TTheme } from '../store/editor.tsx'
-import { sidebarStore } from '../store/sidebar.tsx'
-import { useEffect } from 'react'
+import { defaultThemes, useEditorState, type TEditorTheme } from '../store/editor.tsx'
+import { useSidebarState } from '../store/sidebar.tsx'
 
 interface MyRouterContext
 {
@@ -23,14 +21,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () =>
   {
     const monaco = useMonaco()
-    const { location } = useRouterState()
-    const editorState = useStore(editorStore)
-    const sidebarShouldAppear = useStore(sidebarStore, (store) => store.shouldAppear)
+    const editorState = useEditorState()
+    const sidebarShouldAppear = useSidebarState((state) => state.shouldAppear)
     if (monaco && !editorState.themesLoaded)
     {
       loadMonacoThemes().then((themes) =>
       {
-        const themeKeys: TTheme[] = []
+        const themeKeys: TEditorTheme[] = []
         themes.forEach(theme =>
         {
           monaco.editor.defineTheme(theme[0], theme[1])
@@ -45,11 +42,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         editorState.setThemes([...defaultThemes, ...themeKeys])
       })
     }
-
-    // useEffect(() =>
-    // {
-    //   sidebarStore.setState((store) => ({ ...store, content: null }))
-    // }, [location.pathname])
 
     return <>
       <ThemeProvider>

@@ -1,72 +1,78 @@
-import { Store } from '@tanstack/react-store';
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-export type TTheme = {
-    name: string;
-    code: string;
-    bgColor: string;
+export type TEditorTheme = {
+    name: string
+    code: string
+    bgColor: string
     default?: boolean
 }
 
-export const defaultThemes: TTheme[] = [
+export const defaultThemes: TEditorTheme[] = [
     { name: 'Dark', code: 'vs-dark', bgColor: '#1e1e1e', default: true },
 ]
 
-export const editorStore = new Store({
-    get content() 
-    {
-        const savedContent = localStorage.getItem('@yamlida/editor-content')
-        if (savedContent !== null) return savedContent
-        localStorage.setItem('@yamlida/editor-content', '')
-        return ''
-    },
-    themes: [] as TTheme[],
-    _currentTheme: defaultThemes[0],
-    firstLoad: true,
-    get currentTheme()
-    {
-        if (this.firstLoad)
-        {
-            const savedThemeCode = localStorage.getItem('@yamlida/editor-theme')
-            if (savedThemeCode !== null)
+type TEditorState = {
+    content: string
+    themes: TEditorTheme[]
+    currentTheme: TEditorTheme
+    themesLoaded: boolean
+    loadFromPersist(): void
+    setContent(content: string): void
+    setThemes(themes: TEditorTheme[]): void
+    setCurrentTheme(theme: string): void
+    setThemesLoaded(loaded: boolean): void
+    version: number
+}
+
+export const useEditorState = create<TEditorState>()(
+    persist(
+        (set, get) => ({
+            version: 0,
+            loadFromPersist()
             {
-                const theme = editorStore.state.themes.find((theme) => theme.code === savedThemeCode)
-                if (theme)
+                const savedContent = localStorage.getItem('@yamlida/editor-content')
+                const savedThemeCode = localStorage.getItem('@yamlida/editor-theme')
+                const theme = get().themes.find(
+                    (theme) => theme.code === savedThemeCode,
+                )
+            },
+            content: '',
+            themes: [],
+            currentTheme: defaultThemes[0],
+            themesLoaded: false,
+            setContent(content: string)
+            {
+                set((store) => ({ ...store, content }))
+            },
+            setThemes(themes: TEditorTheme[])
+            {
+                set(() => ({ themes }))
+            },
+            setCurrentTheme(theme: string)
+            {
+                set((store) =>
                 {
-                    editorStore.setState((state) => ({ ...state, _currentTheme: theme }))
-                    return theme
-                }
-            }
-            localStorage.setItem('@yamlida/editor-theme', this._currentTheme.code)
-
-        }
-        return this._currentTheme
-    },
-    themesLoaded: false,
-    setContent: (content: string) =>
-    {
-        editorStore.setState((store) => ({ ...store, content }));
-    },
-    persistContent: () =>
-    {
-        localStorage.setItem('@yamlida/editor-content', editorStore.state.content)
-    },
-    setThemes: (themes: TTheme[]) =>
-    {
-        editorStore.setState((store) => ({ ...store, themes }));
-
-    },
-    setCurrentTheme: (theme: string) =>
-    {
-        editorStore.setState((store) =>
+                    const foundTheme = store.themes.find(
+                        (loadedTheme) => loadedTheme.code == theme,
+                    )
+                    const setTheme = foundTheme ? foundTheme : defaultThemes[0]
+                    return { currentTheme: setTheme }
+                })
+            },
+            setThemesLoaded(loaded: boolean)
+            {
+                set((store) => ({ ...store, themesLoaded: loaded }))
+            },
+        }),
         {
-            const foundTheme = store.themes.find(loadedTheme => loadedTheme.code == theme)
-            const setTheme = foundTheme ? foundTheme : defaultThemes[0]
-            localStorage.setItem('@yamlida/editor-theme', setTheme.code)
-            return { ...store, _currentTheme: setTheme }
-        });
-    },
-    setThemesLoaded: (loaded: boolean) =>
-    {
-        editorStore.setState((store) => ({ ...store, themesLoaded: loaded }));
-    }
-})
+            name: '@yamlida/editor',
+            version: 0,
+            partialize(state)
+            {
+                const { themesLoaded, ...save } = state
+                return save
+            }
+        },
+    ),
+)

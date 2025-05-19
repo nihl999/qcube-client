@@ -1,12 +1,12 @@
-import { Store } from "@tanstack/react-store";
+import { create } from "zustand";
 import type { ReactNode } from "react";
 
-export type TSidebarStore = {
+export type TSidebarState = {
     content: ReactNode
     shouldAppear: boolean
 }
 
-export const sidebarStore = new Store<TSidebarStore>({
+export const useSidebarState = create<TSidebarState>(() => ({
     content: null,
     shouldAppear: true
-})
+}))

@@ -1,4 +1,4 @@
-import { sidebarStore } from '@/store/sidebar'
+import { useSidebarState } from '@/store/sidebar'
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
